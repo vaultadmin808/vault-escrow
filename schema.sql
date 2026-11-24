@@ -1,0 +1,7 @@
+-- Draft PostgreSQL schema only; not wired into the demo application.
+CREATE TABLE app_users (id BIGSERIAL PRIMARY KEY, telegram_user_id BIGINT UNIQUE, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE admins (id BIGSERIAL PRIMARY KEY, email TEXT UNIQUE NOT NULL, role TEXT NOT NULL, active BOOLEAN NOT NULL DEFAULT true, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE deals (id TEXT PRIMARY KEY, buyer_user_id BIGINT REFERENCES app_users(id), seller_user_id BIGINT REFERENCES app_users(id), asset TEXT NOT NULL, amount NUMERIC(30,12) NOT NULL, status TEXT NOT NULL, telegram_group_id BIGINT UNIQUE, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE deal_wallets (id BIGSERIAL PRIMARY KEY, deal_id TEXT NOT NULL REFERENCES deals(id), purpose TEXT NOT NULL CHECK (purpose IN ('buyer_refund','seller_payout')), network TEXT NOT NULL, address TEXT NOT NULL, locked_at TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE approval_requests (id BIGSERIAL PRIMARY KEY, deal_id TEXT NOT NULL REFERENCES deals(id), action TEXT NOT NULL CHECK (action IN ('release','refund')), requested_by BIGINT REFERENCES admins(id), approved_by BIGINT REFERENCES admins(id), status TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE audit_events (id BIGSERIAL PRIMARY KEY, admin_id BIGINT REFERENCES admins(id), deal_id TEXT REFERENCES deals(id), action TEXT NOT NULL, details JSONB NOT NULL DEFAULT '{}'::jsonb, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
